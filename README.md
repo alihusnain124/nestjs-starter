@@ -1,4 +1,4 @@
-# Govt Project API
+# NestJS API Starter
 
 A NestJS + MySQL (TypeORM) REST API with JWT auth, Swagger docs, structured
 logging, rate limiting, and production security defaults already wired up.
@@ -41,9 +41,9 @@ required variables are validated at startup (see `src/config/validation.schema.t
 ## 3. Create the database
 
 ```sql
-CREATE DATABASE IF NOT EXISTS govt_project CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'govt_app'@'localhost' IDENTIFIED BY 'ChangeMe123!';
-GRANT ALL PRIVILEGES ON govt_project.* TO 'govt_app'@'localhost';
+CREATE DATABASE IF NOT EXISTS app_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'app_user'@'localhost' IDENTIFIED BY 'ChangeMe123!';
+GRANT ALL PRIVILEGES ON app_db.* TO 'app_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
