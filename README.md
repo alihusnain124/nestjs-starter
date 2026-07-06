@@ -109,7 +109,7 @@ checklist for adding new feature modules.
 | `npm run lint` | ESLint with autofix |
 | `npm run format` | Prettier write |
 | `npm run test` / `test:e2e` / `test:cov` | Unit / e2e / coverage tests |
-| `npm run migration:generate -- <path>` | Generate a migration from entity changes |
+| `npm run migration:gen -- <path>` | Generate a migration from entity changes |
 | `npm run migration:create -- <path>` | Create an empty migration file |
 | `npm run migration:run` | Apply pending migrations |
 | `npm run migration:revert` | Roll back the last migration |
