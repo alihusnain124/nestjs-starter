@@ -114,6 +114,6 @@ checklist for adding new feature modules.
 | `npm run migration:run` | Apply pending migrations |
 | `npm run migration:revert` | Roll back the last migration |
 
-## License
+## Author
 
-UNLICENSED — private project.
+Created by Ali Husnain.
