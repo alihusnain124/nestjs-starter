@@ -84,7 +84,7 @@ running:
 - **Global error handling** — every error (HTTP or unhandled) is normalized
   into one JSON shape and logged via pino.
 - **Global response envelope** — every success response is wrapped
-  consistently (`success`, `statusCode`, `timestamp`, `path`, `data`).
+  consistently (`statusCode`, `message`, `data`).
 - **Auth** — JWT access/refresh tokens, a global auth guard (opt out per-route
   with `@Public()`), role-based access (`@Roles()` + `RolesGuard`), bcrypt
   password hashing, and the password hash is never serialized into a response.

@@ -96,24 +96,24 @@ Success (`ResponseInterceptor`):
 
 ```json
 {
-  "success": true,
   "statusCode": 200,
-  "timestamp": "2026-07-06T12:00:00.000Z",
-  "path": "/api/v1/users/123",
+  "message": "Success.",
   "data": { "...": "..." }
 }
 ```
+
+A handler can override the default status/message by returning
+`{ statusCode?, message?, data }` itself instead of the raw payload.
+`StreamableFile` responses bypass the envelope entirely so downloads aren't
+broken.
 
 Error (`AllExceptionsFilter`):
 
 ```json
 {
-  "success": false,
   "statusCode": 404,
-  "timestamp": "2026-07-06T12:00:00.000Z",
-  "path": "/api/v1/users/123",
   "message": "User with id 123 not found",
-  "error": "NotFoundException"
+  "errors": null
 }
 ```
 
