@@ -9,13 +9,13 @@ import { Request, Response } from 'express';
 import { PinoLogger } from 'nestjs-pino';
 
 interface ErrorResponseBody {
-  success: false;
   statusCode: number;
-  timestamp: string;
-  path: string;
   message: string | string[];
-  error: string;
+  errors: unknown;
 }
+
+const GENERIC_ERROR_MESSAGE =
+  'An unexpected error occurred while processing your request. Please try again later.';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -28,16 +28,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const { statusCode, message, error } = this.resolveException(exception);
-
-    const body: ErrorResponseBody = {
-      success: false,
-      statusCode,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      message,
-      error,
-    };
+    const { statusCode, message, errors } = this.resolveException(exception);
 
     if (statusCode >= 500) {
       this.logger.error(
@@ -51,20 +42,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    const body: ErrorResponseBody = { statusCode, message, errors };
     response.status(statusCode).json(body);
   }
 
   private resolveException(exception: unknown): {
     statusCode: number;
     message: string | string[];
-    error: string;
+    errors: unknown;
   } {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const response = exception.getResponse();
 
       if (typeof response === 'string') {
-        return { statusCode: status, message: response, error: exception.name };
+        return { statusCode: status, message: response, errors: null };
       }
 
       const responseObj = response as Record<string, unknown>;
@@ -72,14 +64,36 @@ export class AllExceptionsFilter implements ExceptionFilter {
         statusCode: status,
         message:
           (responseObj.message as string | string[]) ?? exception.message,
-        error: (responseObj.error as string) ?? exception.name,
+        errors: responseObj.errors ?? null,
       };
+    }
+
+    // Raw (non-HttpException) errors from lower layers (TypeORM, validation
+    // libraries, ...). Only well-understood error types get a specific status
+    // and message; anything else falls through to the generic 500 below so
+    // internal details (stack traces, query text) never reach the client.
+    if (exception instanceof Error) {
+      if (exception.name === 'QueryFailedError') {
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Invalid request data',
+          errors: null,
+        };
+      }
+
+      if (exception.name === 'ValidationError') {
+        return {
+          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          message: exception.message || 'Validation failed',
+          errors: null,
+        };
+      }
     }
 
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'Internal server error',
-      error: 'InternalServerError',
+      message: GENERIC_ERROR_MESSAGE,
+      errors: null,
     };
   }
 }

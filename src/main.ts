@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
-import { AppModule } from './app.module';
+import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -52,7 +52,10 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   await app.listen(port);
-  logger.log(`Application is running on: ${await app.getUrl()}`);
+
+  const baseUrl = `http://localhost:${port}`;
+  logger.log(`Application is running on: ${baseUrl}/${apiPrefix}`);
+  logger.log(`Swagger docs available at: ${baseUrl}/${apiPrefix}/docs`);
 }
 
 void bootstrap();
