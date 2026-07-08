@@ -88,7 +88,9 @@ Cross-cutting building blocks used across every module:
 | `decorators/public.decorator.ts` | `@Public()` — marks a route to bypass the global `JwtAuthGuard`. |
 | `decorators/roles.decorator.ts` | `@Roles(UserRole.ADMIN, ...)` — declares which roles may access a route (used with `RolesGuard`). |
 | `decorators/current-user.decorator.ts` | `@CurrentUser()` param decorator — pulls the authenticated user off `request.user`. |
-| `swagger/api-response.decorator.ts` | `@ApiSuccessResponse(Model, opts)` / `@ApiErrorResponses(...codes)` — documents the *actual* success/error envelopes (see §7) in Swagger, instead of the raw DTO shape. |
+| `pipes/form-validation.pipe.ts` | `FormValidationPipe` — drop-in replacement for Nest's `ValidationPipe`. Groups `class-validator` errors per field and picks one human-readable message per field (via `PRIORITIZED_CONSTRAINTS`) instead of dumping every failed constraint. |
+| `utils/generalHelper.util.ts` | `formatErrorTitle()` — turns a field name (e.g. `firstName`) into a display label (`First Name`) for validation messages. |
+| `swagger/api-response.decorator.ts` | `createApiResponse(status, message, exampleData?, exampleErrors?, exampleTrackingNumber?)` — builds the `ApiResponseOptions` schema for a single response envelope; pair it with Nest's own `@ApiOkResponse`/`@ApiCreatedResponse`/`@ApiBadRequestResponse`/etc. so the documented response actually matches what the client receives (see §7), instead of the raw DTO shape. |
 
 ### Response envelopes
 
@@ -114,6 +116,20 @@ Error (`AllExceptionsFilter`):
   "statusCode": 404,
   "message": "User with id 123 not found",
   "errors": null
+}
+```
+
+Validation errors are shaped by `FormValidationPipe` before they ever reach the
+filter — one message per invalid field, grouped by property path:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Email must be a valid email and (1) more",
+  "errors": {
+    "email": ["Email must be a valid email"],
+    "password": ["Password must be at least 8 characters"]
+  }
 }
 ```
 
@@ -169,9 +185,11 @@ In bootstrap order:
 3. `helmet()` — sets security headers (CSP, X-Frame-Options, etc.).
 4. `compression()` — gzips responses.
 5. `app.enableCors(...)` — origin driven by `CORS_ORIGIN` (comma-separated list, or `*`).
-6. `ValidationPipe` (global) — `whitelist`, `forbidNonWhitelisted`, `transform`,
-   implicit type conversion. Any unknown/invalid field in a request body is
-   rejected before it reaches a controller.
+6. `FormValidationPipe` (global) — wraps Nest's `ValidationPipe` with
+   `whitelist`, `forbidNonWhitelisted`, `transform`, implicit type conversion,
+   plus a custom `exceptionFactory` that groups `class-validator` errors per
+   field. Any unknown/invalid field in a request body is rejected before it
+   reaches a controller.
 7. Swagger — served at `/api/docs`, bearer-auth scheme configured.
 8. `app.enableShutdownHooks()` — lets Nest lifecycle hooks (e.g. closing the
    DB pool) run on `SIGTERM`/`SIGINT`.
@@ -195,10 +213,14 @@ ClassSerializerInterceptor -> strips @Exclude() fields (must run after ResponseI
 - `nest-cli.json` enables the `@nestjs/swagger` compiler plugin, which
   auto-generates `@ApiProperty()` metadata for any `*.dto.ts` / `*.entity.ts`
   class from its TypeScript types — no manual decoration needed on most fields.
-- Use `@ApiSuccessResponse(SomeDto, { status, isArray, description })` and
-  `@ApiErrorResponses(HttpStatus.BAD_REQUEST, ...)` on new controller methods
-  so the documented response actually matches what the client receives
-  (envelope + all, not just the bare DTO).
+- Use `createApiResponse(status, message, exampleData?, exampleErrors?)` from
+  `swagger/api-response.decorator.ts` together with Nest's own response
+  decorators (`@ApiOkResponse`, `@ApiCreatedResponse`, `@ApiNoContentResponse`,
+  `@ApiBadRequestResponse`, `@ApiUnauthorizedResponse`,
+  `@ApiForbiddenResponse`, `@ApiNotFoundResponse`, `@ApiConflictResponse`, ...)
+  on new controller methods, one call per status code, so the documented
+  response actually matches what the client receives (envelope + all, not
+  just the bare DTO).
 
 ## 11. Known Upstream Issue
 
@@ -216,7 +238,7 @@ be fixed from the app side without downgrading Nest itself. Revisit when
    `class-validator` decorators.
 3. `src/modules/<name>/<name>.service.ts` — business logic, injected repository.
 4. `src/modules/<name>/<name>.controller.ts` — routes; decorate with
-   `@ApiTags`, `@ApiOperation`, `@ApiSuccessResponse`/`@ApiErrorResponses`,
+   `@ApiTags`, `@ApiOperation`, and `createApiResponse(...)`-backed response decorators,
    `@Public()` if it should skip auth, `@Roles(...)` + `@UseGuards(RolesGuard)`
    if it's role-gated.
 5. `src/modules/<name>/<name>.module.ts` — `TypeOrmModule.forFeature([Entity])`,

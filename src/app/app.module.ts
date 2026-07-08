@@ -40,7 +40,7 @@ import { UsersModule } from '../modules/users/users.module';
               ? { target: 'pino-pretty', options: { singleLine: true } }
               : undefined,
           redact: ['req.headers.authorization', 'req.headers.cookie'],
-          autoLogging: true,
+          autoLogging: false,
         },
         forRoutes: [{ path: '/*path', method: RequestMethod.ALL }],
       }),

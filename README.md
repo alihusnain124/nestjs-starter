@@ -88,8 +88,9 @@ running:
 - **Auth** — JWT access/refresh tokens, a global auth guard (opt out per-route
   with `@Public()`), role-based access (`@Roles()` + `RolesGuard`), bcrypt
   password hashing, and the password hash is never serialized into a response.
-- **Security middleware** — helmet, CORS, global `ValidationPipe`
-  (whitelist/forbid-unknown-fields/transform), request rate limiting.
+- **Security middleware** — helmet, CORS, global `FormValidationPipe`
+  (whitelist/forbid-unknown-fields/transform, with grouped per-field
+  validation error messages), request rate limiting.
 - **Swagger** — full OpenAPI docs, including accurate documented response
   envelopes (success + error shapes) per route, and auto-generated schemas
   for DTOs/entities via the swagger compiler plugin.

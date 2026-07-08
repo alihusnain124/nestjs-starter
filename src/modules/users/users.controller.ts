@@ -11,17 +11,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
-  ApiResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import {
-  ApiErrorResponses,
-  ApiSuccessResponse,
-} from '../../common/swagger/api-response.decorator';
+import { createApiResponse } from '../../common/swagger/api-response.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
@@ -36,27 +38,47 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'List all users (admin only)' })
-  @ApiSuccessResponse(User, { isArray: true, description: 'List of users' })
-  @ApiErrorResponses(HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN)
+  @ApiOkResponse(
+    createApiResponse(HttpStatus.OK, 'Users retrieved successfully.'),
+  )
+  @ApiUnauthorizedResponse(
+    createApiResponse(HttpStatus.UNAUTHORIZED, 'Invalid credentials.'),
+  )
+  @ApiForbiddenResponse(
+    createApiResponse(HttpStatus.FORBIDDEN, 'Forbidden resource.'),
+  )
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by id' })
-  @ApiSuccessResponse(User, { description: 'The requested user' })
-  @ApiErrorResponses(HttpStatus.UNAUTHORIZED, HttpStatus.NOT_FOUND)
+  @ApiOkResponse(
+    createApiResponse(HttpStatus.OK, 'User retrieved successfully.', User),
+  )
+  @ApiUnauthorizedResponse(
+    createApiResponse(HttpStatus.UNAUTHORIZED, 'Invalid credentials.'),
+  )
+  @ApiNotFoundResponse(
+    createApiResponse(HttpStatus.NOT_FOUND, 'User not found.'),
+  )
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user' })
-  @ApiSuccessResponse(User, { description: 'The updated user' })
-  @ApiErrorResponses(
-    HttpStatus.BAD_REQUEST,
-    HttpStatus.UNAUTHORIZED,
-    HttpStatus.NOT_FOUND,
+  @ApiOkResponse(
+    createApiResponse(HttpStatus.OK, 'User updated successfully.', User),
+  )
+  @ApiBadRequestResponse(
+    createApiResponse(HttpStatus.BAD_REQUEST, 'Validation errors occurred.'),
+  )
+  @ApiUnauthorizedResponse(
+    createApiResponse(HttpStatus.UNAUTHORIZED, 'Invalid credentials.'),
+  )
+  @ApiNotFoundResponse(
+    createApiResponse(HttpStatus.NOT_FOUND, 'User not found.'),
   )
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -70,11 +92,17 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a user (admin only)' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'User deleted' })
-  @ApiErrorResponses(
-    HttpStatus.UNAUTHORIZED,
-    HttpStatus.FORBIDDEN,
-    HttpStatus.NOT_FOUND,
+  @ApiNoContentResponse(
+    createApiResponse(HttpStatus.NO_CONTENT, 'User deleted successfully.'),
+  )
+  @ApiUnauthorizedResponse(
+    createApiResponse(HttpStatus.UNAUTHORIZED, 'Invalid credentials.'),
+  )
+  @ApiForbiddenResponse(
+    createApiResponse(HttpStatus.FORBIDDEN, 'Forbidden resource.'),
+  )
+  @ApiNotFoundResponse(
+    createApiResponse(HttpStatus.NOT_FOUND, 'User not found.'),
   )
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id);

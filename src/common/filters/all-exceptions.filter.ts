@@ -29,16 +29,30 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const { statusCode, message, errors } = this.resolveException(exception);
+    const logMessage = Array.isArray(message) ? message.join('; ') : message;
 
     if (statusCode >= 500) {
       this.logger.error(
-        { err: exception, path: request.url, method: request.method },
-        'Unhandled exception',
+        {
+          err: exception,
+          path: request.url,
+          method: request.method,
+          statusCode,
+          message,
+          errors,
+        },
+        logMessage,
       );
     } else {
-      this.logger.warn(
-        { path: request.url, method: request.method, statusCode },
-        'Handled exception',
+      this.logger.error(
+        {
+          path: request.url,
+          method: request.method,
+          statusCode,
+          message,
+          errors,
+        },
+        logMessage,
       );
     }
 
