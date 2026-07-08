@@ -5,29 +5,28 @@ export function createApiResponse(
   message: string,
   exampleData?: string | object,
   exampleErrors?: Record<string, string[]>,
-  exampleTrackingNumber?: string,
 ): ApiResponseOptions {
+  const isClassReference =
+    typeof exampleData === 'function' ||
+    (Array.isArray(exampleData) &&
+      exampleData.some((item) => typeof item === 'function'));
+
   return {
     schema: {
       properties: {
         statusCode: { type: 'number', example: status },
         message: { type: 'string', example: message },
-        ...(exampleData !== undefined && {
-          data: {
-            type: typeof exampleData === 'string' ? 'string' : 'object',
-            example: exampleData,
-          },
-        }),
+        ...(exampleData !== undefined &&
+          !isClassReference && {
+            data: {
+              type: typeof exampleData === 'string' ? 'string' : 'object',
+              example: exampleData,
+            },
+          }),
         ...(exampleErrors && {
           errors: {
             type: 'object',
             example: exampleErrors,
-          },
-        }),
-        ...(exampleTrackingNumber && {
-          trackingNumber: {
-            type: 'string',
-            example: exampleTrackingNumber,
           },
         }),
       },
